@@ -1,9 +1,10 @@
 **闭源驱动** | [开源驱动](README_mainline.md)
 
 # Actions-USB-Frimware
-使用 GitHub Actions 在线编译定制包括360T7（512M）USB、K2P（32M）USB、RAX3000M（eMMC）USB 的 immortalwrt-mt798x 固件
+使用 GitHub Actions 在线编译定制包括 360T7（512M）USB、K2P（32M）USB、RAX3000M（eMMC）USB 的 immortalwrt-mt798x 固件。
 - 添加了 360T7 512M Ram USB 版 DTS 支持。
-- 添加了 K2P 32M Ram USB 版 DTS 支持。
+- 添加了 K2P(32M) 512M Ram USB 版 DTS 支持。
+- 默认都继承了 airplay2 支持，这也是本分支存在的理由。
 
 ## 固件特性
 使用 [hanwckf](https://github.com/hanwckf) 大佬的 [immortalwrt-mt798x](https://github.com/hanwckf/immortalwrt-mt798x) 项目仓库，'openwrt-21.02' 分支源码编译，无线使用 mtwifi 原厂无线驱动，内核版本 5.4.x
