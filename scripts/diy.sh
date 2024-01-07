@@ -1,12 +1,13 @@
 #!/bin/bash
 
 #更改默认地址为192.168.9.1
-sed -i 's/192.168.1.1/192.168.9.1/g' package/base-files/files/bin/config_generate
+sed -i 's/192.168.1.1/192.168.11.1/g' package/base-files/files/bin/config_generate
 
 #添加软件包
 echo 'src-git-full kenzok https://github.com/kenzok8/openwrt-packages' >>feeds.conf.default
 echo 'src-git-full small https://github.com/kenzok8/small' >>feeds.conf.default
 git clone https://github.com/zzsj0928/luci-app-pushbot package/luci-app-pushbot
+git clone https://github.com/sbwml/luci-app-airconnect.git  package/luci-app-airconnect
 
 #添加360T7 108M 512M-Ram USB支持
 echo '&xhci {' >> target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-360-t7-108M.dts
