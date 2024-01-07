@@ -5,6 +5,7 @@
 - 添加了 360T7 512M Ram USB 版 DTS 支持。
 - 添加了 K2P(32M) 512M Ram USB 版 DTS 支持。
 - 默认都集成了 airplay2，这也是本分支存在的理由。
+- 初学者自用，修改大佬的代码实现个人需求，不保证 release 的固件好用或能用，请使用者自行鉴别。
 
 ## 固件特性
 使用 [hanwckf](https://github.com/hanwckf) 大佬的 [immortalwrt-mt798x](https://github.com/hanwckf/immortalwrt-mt798x) 项目仓库，'openwrt-21.02' 分支源码编译，无线使用 mtwifi 原厂无线驱动，内核版本 5.4.x
