@@ -16,8 +16,8 @@
 `block-mount、automount、chinadns-ng、curl、e2fsprogs、fdisk、hd-idle、ipv6helper、kmod-sound-core、kmod-usb-audio、kmod-usb-core、kmod-usb-ehci、kmod-usb-ohci、kmod-usb-uhci、kmod-usb-storage、kmod-usb2、kmod-usb3、kmod-wireguard、ksmbd-server、nano` 等，K2P 由于空间小（32M），未包含部分软件。
 
 添加集成软件包
-`luci-app-alist、luci-app-appfilter、luci-app-aria2、luci-app-cpulimit、luci-app-ddns-go、luci-app-airplay2、luci-app-eqos-mtk、luci-app-hd-idle、luci-app-ksmbd、luci-app-netdata、luci-app-pushbot、luci-app-timecontrol、luci-app-ttyd、luci-app-turboacc-mtk、luci-app-unblockneteasemusic、luci-app-upnp、luci-app-vlmcsd、luci-app-watchcat、luci-app-wireguard、`，K2P（32M）由于空间限制，未包含全部。
-~~等并预置 openclash 内核~~（我不喜用此App）
+`luci-app-alist、luci-app-appfilter、luci-app-aria2、luci-app-cpulimit、luci-app-ddns-go、luci-app-airplay2、luci-app-eqos-mtk、luci-app-hd-idle、luci-app-ksmbd、luci-app-netdata、luci-app-pushbot、luci-app-timecontrol、luci-app-ttyd、luci-app-turboacc-mtk、luci-app-unblockneteasemusic、luci-app-upnp、luci-app-vlmcsd、luci-app-watchcat、luci-app-wireguard`，K2P（32M）由于空间限制，未包含全部。
+~~并预置 openclash 内核~~（我不喜用此App）
 
 加入由 [1715173329 天灵](https://github.com/1715173329) 使用 js 重写，[237大佬](https://www.right.com.cn/forum/?364126) 适配硬件 QoS 的 [luci-app-eqos-mtk](https://github.com/padavanonly/immortalwrt-mt798x/commit/7c8019ce4bcb1a79c01c517b62e49f059ca70049)
 
