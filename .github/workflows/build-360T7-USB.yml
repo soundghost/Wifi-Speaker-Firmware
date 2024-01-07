@@ -170,10 +170,10 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
-        echo -e "### immortalwrt-mt7981-cmcc_rax3000m-emmc" >> release.txt
+        echo -e "### immortalwrt-mt7981-360T7-USB-512M" >> release.txt
         wlan_luci_interface=""
         if grep -q 'CONFIG_PACKAGE_mtwifi-cfg=y' openwrt/.config; then
-          echo "- 使用 OpenWrt 原生无线控制界面" >> release.txt
+          echo "- 使用 OpenWrt 原生无线控制界面，包含USB驱动" >> release.txt
           wlan_luci_interface="mtwifi-cfg"
         else
           echo "- 使用 MTK SDK 无线控制界面" >> release.txt
