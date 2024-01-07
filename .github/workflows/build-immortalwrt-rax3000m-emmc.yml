@@ -97,7 +97,7 @@ jobs:
     - name: 导入补丁和配置
       run: |
         [ -e files ] && mv files openwrt/files
-        cat configs/rax3000m-emmc_mod.config >> openwrt/.config
+        cat configs/rax3000m-emmc.config >> openwrt/.config
 
     - name: 设置无线控制界面样式
       if: env.USE_MTWIFI_CFG == 'true'
