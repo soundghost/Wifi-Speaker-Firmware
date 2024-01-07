@@ -16,7 +16,7 @@
 `block-mount、automount、chinadns-ng、curl、e2fsprogs、fdisk、hd-idle、ipv6helper、kmod-sound-core、kmod-usb-audio、kmod-usb-core、kmod-usb-ehci、kmod-usb-ohci、kmod-usb-uhci、kmod-usb-storage、kmod-usb2、kmod-usb3、kmod-wireguard、ksmbd-server、nano` 等，K2P 由于空间小（32M），未包含部分软件。
 
 添加集成软件包
-`luci-app-alist、luci-app-appfilter、luci-app-aria2、luci-app-cpulimit、luci-app-ddns-go、luci-app-airplay2、luci-app-eqos-mtk、luci-app-hd-idle、luci-app-ksmbd、luci-app-netdata、luci-app-pushbot、luci-app-timecontrol、luci-app-ttyd、luci-app-turboacc-mtk、luci-app-unblockneteasemusic、luci-app-upnp、luci-app-vlmcsd、luci-app-watchcat、luci-app-wireguard`，K2P（32M）由于空间限制，未包含全部。
+`luci-app-alist、luci-app-appfilter、luci-app-aria2、luci-app-airconnect、luci-app-cpulimit、luci-app-ddns-go、luci-app-airplay2、luci-app-eqos-mtk、luci-app-hd-idle、luci-app-ksmbd、luci-app-netdata、luci-app-pushbot、luci-app-timecontrol、luci-app-ttyd、luci-app-turboacc-mtk、luci-app-unblockneteasemusic、luci-app-upnp、luci-app-vlmcsd、luci-app-watchcat、luci-app-wireguard`，K2P（32M）由于空间限制，未包含全部。
 ~~并预置 openclash 内核~~（我不喜用此App）
 
 加入由 [1715173329 天灵](https://github.com/1715173329) 使用 js 重写，[237大佬](https://www.right.com.cn/forum/?364126) 适配硬件 QoS 的 [luci-app-eqos-mtk](https://github.com/padavanonly/immortalwrt-mt798x/commit/7c8019ce4bcb1a79c01c517b62e49f059ca70049)
@@ -31,7 +31,7 @@
 
 - 默认构建 eeprom 替换为 H3C NX30 Pro 提取版本（仅限RAX3000M eMMC）（来自 [237大佬](https://www.right.com.cn/forum/?364126) 提取）以增大无线功率，**原厂 eeprom 无线信号 2.4G: 23dBm, 5G: 22dBm；替换 nx30pro_eeprom 后 2.4G: 25dBm, 5G: 24dBm**。如需恢复使用默认 eeprom 请在 Run workflow 时取消勾选 “Use nx30pro eeprom”，或在 workflow 配置文件中将 `USE_NX30PRO_EEPROM` 中 `default: true` 的 true 改为 false，重新编译刷入使用
 
-- 默认编译 52 MHz 版本（仅限RAX3000M eMMC），**部分机器因闪存体质差异，使用默认 52 MHz 闪存频率固件可能会出现 I/O 报错，无法正常使用，甚至可能无法启动**，~~你可以在 [Releases](https://github.com/AngelaCooljx/Actions-rax3000m-emmc/releases) 处查找 26 MHz 版本固件~~。自行构建需要在 Run workflow 时取消勾选 “Use 52MHz max-frequency”，或在 workflow 配置文件中将 `USE_52MHZ` 中 `default: true` 的 true 改为 false，重新编译刷入使用
+- 默认编译 52 MHz 版本（仅限RAX3000M eMMC），**部分机器因闪存体质差异，使用默认 52 MHz 闪存频率固件可能会出现 I/O 报错，无法正常使用，甚至可能无法启动**，你可以在 [Releases](https://github.com/AngelaCooljx/Actions-rax3000m-emmc/releases) 处查找 26 MHz 版本固件。自行构建需要在 Run workflow 时取消勾选 “Use 52MHz max-frequency”，或在 workflow 配置文件中将 `USE_52MHZ` 中 `default: true` 的 true 改为 false，重新编译刷入使用
 
 ## 如何刷入
 参考 https://t.me/nanopi_r2s/637 刷入单分区版 GPT BL2 FIP, 再通过 custom U-Boot 刷写 sysupgrade.bin 固件
