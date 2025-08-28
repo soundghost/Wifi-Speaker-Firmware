@@ -1,7 +1,5 @@
 **闭源驱动** | [开源驱动](README_mainline.md)
 
-# 未知玄学问题，RAX3000M eMMC 版固件 AirPlay 无法启动，其表现为 luci 界面服务显示运行，但手机发现不了服务，目前无法解决这一玄学问题，同样的源码和几乎同样的配置，在 360T7 USB 版固件中无此问题，RAX3000M Nand 版亦无此问题。
-
 # Actions-USB-Frimware
 使用 GitHub Actions 在线编译定制包括 360T7（512M）USB、K2P（32M）USB、RAX3000M（eMMC）USB 的 immortalwrt-mt798x 固件。
 - 添加了 360T7 512M Ram USB 版 DTS 支持。
