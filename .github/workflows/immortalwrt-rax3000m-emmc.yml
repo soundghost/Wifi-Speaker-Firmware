@@ -19,12 +19,12 @@ on:
       USE_NX30PRO_EEPROM:
         description: 'Use nx30pro eeprom'
         required: true
-        default: false
+        default: true
         type: boolean
       USE_52MHZ:
         description: 'Use 52MHz max-frequency'
         required: true
-        default: false
+        default: true
         type: boolean
 
 env:
@@ -155,7 +155,7 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
-        echo -e "### immortalwrt-wifi-speaker-SNAPSHOT-rax3000m-emmc-ubootmod" >> release.txt
+        echo -e "### immortalwrt-23.05-wifi-speaker-SNAPSHOT-rax3000m-emmc-ubootmod" >> release.txt
         eeprom_status=""
         if [ -e openwrt/target/linux/mediatek/filogic/base-files/lib/firmware/mediatek/nx30pro_eeprom.bin ] ; then
           echo "- eeprom 使用 H3C NX30 Pro 提取版本" >> release.txt
@@ -166,7 +166,7 @@ jobs:
         fi
         max_frequency=$(($(grep -oP "max-frequency = <\K[0-9]*" openwrt/target/linux/mediatek/dts/mt7981b-cmcc-rax3000m-emmc-ubootmod.dts) / 1000000))
         echo "- 使用闪存频率: ${max_frequency}MHz" >> release.txt
-        release_tag=$(date +"%Y.%m.%d-wifi-speaker-SNAPSHOT-rax3000m-emmc-ubootmod-${eeprom_status}-${max_frequency}MHz")
+        release_tag=$(date +"%Y.%m.%d-23.05-wifi-speaker-SNAPSHOT-rax3000m-emmc-ubootmod-${eeprom_status}-${max_frequency}MHz")
         echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
