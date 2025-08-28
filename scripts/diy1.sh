@@ -4,12 +4,12 @@
 sed -i 's/192.168.1.1/192.168.9.1/g' package/base-files/files/bin/config_generate
 
 #添加软件包
-echo 'src-git smpackage https://github.com/kenzok8/small-package' >> feeds.conf.default
+# echo 'src-git smpackage https://github.com/kenzok8/small-package' >> feeds.conf.default
 # echo 'src-git-full small https://github.com/kenzok8/small' >>feeds.conf.default
 # echo 'src-git helloworld https://github.com/fw876/helloworld' >> feeds.conf.default
-# git clone https://github.com/zzsj0928/luci-app-pushbot package/luci-app-pushbot
-# git clone https://github.com/sbwml/luci-app-airconnect.git  package/luci-app-airconnect
-# git clone https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
+git clone https://github.com/zzsj0928/luci-app-pushbot package/luci-app-pushbot
+git clone https://github.com/sbwml/luci-app-airconnect.git  package/luci-app-airconnect
+git clone https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
 
 #添加360T7 108M 512M-Ram USB支持
 # echo '&xhci {' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
