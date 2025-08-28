@@ -12,12 +12,21 @@ git clone https://github.com/sbwml/luci-app-airconnect.git  package/luci-app-air
 git clone https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
 
 #添加360T7 108M 512M-Ram USB支持
-echo '&xhci {' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
-echo '        mediatek,u3p-dis-msk = <0x0>;' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
-echo '        phys = <&u2port0 PHY_TYPE_USB2>,' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
-echo '                   <&u3port0 PHY_TYPE_USB3>;' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
-echo '        status = "okay";' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
-echo '};' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '&xhci {' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '        mediatek,u3p-dis-msk = <0x0>;' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '        phys = <&u2port0 PHY_TYPE_USB2>,' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '                   <&u3port0 PHY_TYPE_USB3>;' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '        status = "okay";' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+# echo '};' >> target/linux/mediatek/dts/mt7981b-qihoo-360t7.dts
+
+cat >> target/linux/mediatek/dts/mt7981b-qihoo-360t7-ubootmod.dts << EOF
+&xhci {
+        mediatek,u3p-dis-msk = <0x0>;
+        phys = <&u2port0 PHY_TYPE_USB2>,
+                   <&u3port0 PHY_TYPE_USB3>;
+        status = "okay";
+};
+EOF
 
 #添加K2P 32M nand USB支持
 sed -i 's/15744k/32448k/g' target/linux/ramips/image/mt7621.mk
