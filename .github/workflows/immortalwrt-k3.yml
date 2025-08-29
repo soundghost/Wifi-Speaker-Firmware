@@ -166,7 +166,7 @@ jobs:
         fi
         max_frequency=$(($(grep -oP "max-frequency = <\K[0-9]*" openwrt/target/linux/mediatek/dts/mt7981b-cmcc-rax3000m-emmc-ubootmod.dts) / 1000000))
         echo "- 使用闪存频率: ${max_frequency}MHz" >> release.txt
-        release_tag=$(date +"%Y.%m.%d-23.05-wifi-speaker-SNAPSHOT-rax3000m-emmc-ubootmod-${eeprom_status}-${max_frequency}MHz")
+        release_tag=$(date +"%Y.%m.%d-23.05-wifi-speaker-SNAPSHOT-Phicomm-K3-${eeprom_status}-${max_frequency}MHz")
         echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
