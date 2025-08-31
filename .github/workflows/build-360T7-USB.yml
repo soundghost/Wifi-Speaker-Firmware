@@ -50,6 +50,8 @@ jobs:
     steps:
     - name: 检查
       uses: actions/checkout@main
+      with:
+          fetch-depth: 0
 
     - name: 释放磁盘空间
       uses: jlumbroso/free-disk-space@main
@@ -90,6 +92,17 @@ jobs:
       run: |
         git clone $REPO_URL openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+# ← 在此插入 cache 配置开始
+    - name: Cache 工具链（加速）
+      uses: klever1988/cachewrtbuild@main
+      with:
+        ccache: 'true'                     # 根据需要是否缓存 ccache
+        toolchain: true                    # 缓存工具链
+        skip: true                         # 跳过工具链重新编译
+        clean: false                       # 保留缓存
+        prefix: ${{ github.workspace }}/openwrt
+# ← cache 配置结束
 
     - name: 开启缓存
       uses: klever1988/cachewrtbuild@main
