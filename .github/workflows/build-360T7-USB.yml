@@ -99,17 +99,17 @@ jobs:
       with:
         ccache: 'true'                     # 根据需要是否缓存 ccache
         toolchain: true                    # 缓存工具链
-        skip: true                         # 跳过工具链重新编译
+#        skip: true                         # 跳过工具链重新编译
         clean: false                       # 保留缓存
         prefix: ${{ github.workspace }}/openwrt
 # ← cache 配置结束
 
-    - name: 开启缓存
-      uses: klever1988/cachewrtbuild@main
-      with:
-        ccache: 'true'
-        mixkey: 'openwrt21-cortexa53'
-        prefix: ${{ github.workspace }}/openwrt
+#    - name: 开启缓存
+#      uses: klever1988/cachewrtbuild@main
+#      with:
+#        ccache: 'true'
+#        mixkey: 'openwrt21-cortexa53'
+#        prefix: ${{ github.workspace }}/openwrt
 
     - name: 更新 & 安装 feeds & 执行脚本
       run: |
