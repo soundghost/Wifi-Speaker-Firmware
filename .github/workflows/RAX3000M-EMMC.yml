@@ -67,24 +67,24 @@ jobs:
         echo "USE_52MHZ=${{ github.event.inputs.USE_52MHZ }}" >> $GITHUB_ENV
         echo "CLEAN_CACHE=${{ github.event.inputs.CLEAN_CACHE }}" >> $GITHUB_ENV
 
-    - name: 计算缓存时间戳和键值
-      id: cache-timestamp
-      run: |
-        # 计算2周前的时间戳
-        two_weeks_ago=$(date -d "14 days ago" +%s)
-        current_week=$(date +%Y-W%U)
+    #- name: 计算缓存时间戳和键值
+    #  id: cache-timestamp
+    #  run: |
+    #    # 计算2周前的时间戳
+    #    two_weeks_ago=$(date -d "14 days ago" +%s)
+    #    current_week=$(date +%Y-W%U)
         
-        # 生成基于输入参数的缓存键后缀
-        cache_suffix=""
-        [ "${{ github.event.inputs.USE_MTWIFI_CFG }}" == "true" ] && cache_suffix="${cache_suffix}-mtwifi"
-        [ "${{ github.event.inputs.USE_NX30PRO_EEPROM }}" == "true" ] && cache_suffix="${cache_suffix}-nx30pro"
-        [ "${{ github.event.inputs.USE_52MHZ }}" == "true" ] && cache_suffix="${cache_suffix}-52mhz"
+    #    # 生成基于输入参数的缓存键后缀
+    #    cache_suffix=""
+    #    [ "${{ github.event.inputs.USE_MTWIFI_CFG }}" == "true" ] && cache_suffix="${cache_suffix}-mtwifi"
+    #    [ "${{ github.event.inputs.USE_NX30PRO_EEPROM }}" == "true" ] && cache_suffix="${cache_suffix}-nx30pro"
+    #    [ "${{ github.event.inputs.USE_52MHZ }}" == "true" ] && cache_suffix="${cache_suffix}-52mhz"
         
-        cache_key="openwrt-toolchain-${current_week}${cache_suffix}"
+    #    cache_key="openwrt-toolchain-${current_week}${cache_suffix}"
         
-        echo "cache_key=${cache_key}" >> $GITHUB_OUTPUT
-        echo "two_weeks_ago=${two_weeks_ago}" >> $GITHUB_OUTPUT
-        echo "🔑 使用缓存键: ${cache_key}"
+    #    echo "cache_key=${cache_key}" >> $GITHUB_OUTPUT
+    #    echo "two_weeks_ago=${two_weeks_ago}" >> $GITHUB_OUTPUT
+    #    echo "🔑 使用缓存键: ${cache_key}"
 
     - name: 释放磁盘空间（系统清理）
       run: |
@@ -127,48 +127,48 @@ jobs:
         echo "清理后的磁盘使用情况："
         df -hT
 
-    - name: 检查并清理过期工具链缓存
-      run: |
-        if [ "${{ env.CLEAN_CACHE }}" == "true" ]; then
-          echo "🗑️ 手动清理所有缓存..."
-          sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
-        else
-          # 检查缓存目录的修改时间
-          cache_expired=false
+    #- name: 检查并清理过期工具链缓存
+    #  run: |
+    #    if [ "${{ env.CLEAN_CACHE }}" == "true" ]; then
+    #      echo "🗑️ 手动清理所有缓存..."
+    #      sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
+    #    else
+    #      # 检查缓存目录的修改时间
+    #      cache_expired=false
           
-          for dir in "openwrt/staging_dir" "openwrt/build_dir" "~/.ccache"; do
-            if [ -d "$dir" ]; then
-              cache_time=$(stat -c %Y "$dir" 2>/dev/null || echo 0)
-              if [ $cache_time -lt ${{ steps.cache-timestamp.outputs.two_weeks_ago }} ]; then
-                echo "📅 缓存目录 $dir 超过2周，标记为过期"
-                cache_expired=true
-              fi
-            fi
-          done
+    #      for dir in "openwrt/staging_dir" "openwrt/build_dir" "~/.ccache"; do
+    #        if [ -d "$dir" ]; then
+    #          cache_time=$(stat -c %Y "$dir" 2>/dev/null || echo 0)
+    #          if [ $cache_time -lt ${{ steps.cache-timestamp.outputs.two_weeks_ago }} ]; then
+    #            echo "📅 缓存目录 $dir 超过2周，标记为过期"
+    #            cache_expired=true
+    #          fi
+    #        fi
+    #      done
           
-          if [ "$cache_expired" = "true" ]; then
-            echo "🕐 发现过期缓存，清理旧工具链..."
-            sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
-            echo "✅ 过期缓存清理完成，将进行全新编译"
-          else
-            echo "✅ 缓存仍然有效，将使用现有工具链加速编译"
-          fi
-        fi
+    #      if [ "$cache_expired" = "true" ]; then
+    #        echo "🕐 发现过期缓存，清理旧工具链..."
+    #        sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
+    #        echo "✅ 过期缓存清理完成，将进行全新编译"
+    #      else
+    #        echo "✅ 缓存仍然有效，将使用现有工具链加速编译"
+    #      fi
+    #    fi
 
-    - name: 缓存工具链与编译缓存
-      uses: actions/cache@v4
-      with:
-        path: |
-          openwrt/staging_dir
-          openwrt/build_dir/toolchain-*
-          openwrt/build_dir/host
-          openwrt/tmp
-          openwrt/dl
-          ~/.ccache
-        key: ${{ steps.cache-timestamp.outputs.cache_key }}-${{ hashFiles('**/feeds.conf.default') }}
-        restore-keys: |
-          ${{ steps.cache-timestamp.outputs.cache_key }}-
-        save-always: true
+    #- name: 缓存工具链与编译缓存
+    #  uses: actions/cache@v4
+    #  with:
+    #    path: |
+    #      openwrt/staging_dir
+    #      openwrt/build_dir/toolchain-*
+    #      openwrt/build_dir/host
+    #      openwrt/tmp
+    #      openwrt/dl
+    #      ~/.ccache
+    #    key: ${{ steps.cache-timestamp.outputs.cache_key }}-${{ hashFiles('**/feeds.conf.default') }}
+    #    restore-keys: |
+    #      ${{ steps.cache-timestamp.outputs.cache_key }}-
+    #    save-always: true
 
     - name: 初始化编译环境
       env:
@@ -228,7 +228,7 @@ jobs:
 
     - name: 更新 feeds 并安装依赖
       run: |
-        # cd openwrt
+        cd openwrt
         
         # 配置 git 用户信息
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
