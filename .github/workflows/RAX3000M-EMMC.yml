@@ -155,8 +155,9 @@ jobs:
           fi
         fi
 
-    - name: 缓存工具链与编译缓存
-      uses: actions/cache@v4
+    - name: 恢复工具链与编译缓存
+      uses: actions/cache/restore@v4
+      id: cache-restore
       with:
         path: |
           openwrt/staging_dir
@@ -168,7 +169,6 @@ jobs:
         key: ${{ steps.cache-timestamp.outputs.cache_key }}-${{ hashFiles('**/feeds.conf.default') }}
         restore-keys: |
           ${{ steps.cache-timestamp.outputs.cache_key }}-
-        save-always: true
 
     - name: 初始化编译环境
       env:
@@ -573,6 +573,18 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: 保存工具链缓存
+      uses: actions/cache/save@v4
+      if: steps.compile.outputs.status == 'success' && steps.cache-restore.outputs.cache-hit != 'true'
+      with:
+        path: |
+          openwrt/staging_dir
+          openwrt/build_dir/toolchain-*
+          openwrt/build_dir/host
+          openwrt/tmp
+          openwrt/dl
+          ~/.ccache
+        key: ${{ steps.cache-timestamp.outputs.cache_key }}-${{ hashFiles('**/feeds.conf.default') }}
     - name: 清理旧版本发布
       uses: dev-drprasad/delete-older-releases@v0.3.0
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
