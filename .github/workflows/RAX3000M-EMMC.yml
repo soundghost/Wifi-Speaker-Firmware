@@ -608,8 +608,7 @@ jobs:
         cd ..
         
         # 生成发布标签（按要求格式：编译完成时间 - 固件型号 - WiFi控制方式 - 第三方eeprom）
-        # release_tag="${compile_time}-${{ env.DEVICE_NAME }}-${wlan_interface}-${eeprom_status}"
-		release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}")
+        release_tag="${compile_time}-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}"
         
         # 添加频率信息到标签（如果不是默认值）
         if [ "$max_frequency" != "default" ] && [ "$max_frequency" != "unknown" ]; then
