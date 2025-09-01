@@ -221,10 +221,10 @@ jobs:
         echo "✅ 源码克隆完成"
         
         # 显示源码信息
-        cd openwrt
-        echo "📋 源码信息:"
-        echo "分支: $(git branch --show-current)"
-        echo "提交: $(git log --oneline -1)"
+        #cd openwrt
+        #echo "📋 源码信息:"
+        #echo "分支: $(git branch --show-current)"
+        #echo "提交: $(git log --oneline -1)"
 
     - name: 更新 feeds 并安装依赖
       run: |
