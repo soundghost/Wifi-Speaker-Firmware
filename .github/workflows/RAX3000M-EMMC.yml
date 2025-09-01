@@ -228,7 +228,7 @@ jobs:
 
     - name: 更新 feeds 并安装依赖
       run: |
-        cd openwrt
+        # cd openwrt
         
         # 配置 git 用户信息
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
