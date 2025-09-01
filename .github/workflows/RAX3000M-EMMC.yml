@@ -43,7 +43,7 @@ env:
   FREE_DISK_SH: scripts/free_disk_space.sh
   ENV_SH: scripts/environment.sh
   DIY_SH: scripts/diy.sh
-  CLASH_CORE: scripts/preset-clash-core.sh
+  #CLASH_CORE: scripts/preset-clash-core.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: false
   UPLOAD_RELEASE: true
@@ -355,11 +355,11 @@ jobs:
       run: |
         cd openwrt
         
-    #    # 执行 Clash 核心预设脚本
-    #    if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
-    #      echo "🔧 预设 Clash 核心..."
-    #      chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
-    #    fi
+        # 执行 Clash 核心预设脚本
+        #if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
+        #  echo "🔧 预设 Clash 核心..."
+        #  chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
+        #fi
         
         # 生成默认配置
         echo "⚙️ 生成默认配置..."
