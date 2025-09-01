@@ -86,12 +86,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-openwrt-
 
-    - name: 开启 ccache
-      uses: klever1988/cachewrtbuild@main
-      with:
-        ccache: 'true'
-        mixkey: 'openwrt21-cortexa53'
-        prefix: ${{ github.workspace }}/openwrt
+#    - name: 开启 ccache
+#      uses: klever1988/cachewrtbuild@main
+#      with:
+#        ccache: 'true'
+#        mixkey: 'openwrt21-cortexa53'
+#        prefix: ${{ github.workspace }}/openwrt
 
     - name: 初始化环境
       env:
