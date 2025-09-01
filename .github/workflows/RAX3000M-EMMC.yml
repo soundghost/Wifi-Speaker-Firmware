@@ -521,20 +521,21 @@ jobs:
         echo "## 📋 编译信息" >> release.txt
         echo "- 🕐 编译完成时间: $compile_time" >> release.txt
         echo "- 🖥️ 编译环境: Ubuntu 22.04" >> release.txt
-        echo "- 🔧 编译器: GCC $(cd openwrt && make val.GCCV 2>/dev/null || echo 'Unknown')" >> release.txt
+        echo "- 🔧 golang ver:1.25.x | xray-core ver:25.8.3" >> release.txt
+        echo "- 📦 包含以下音乐类软件：airconnect | airplay2 | gmediarender | pianod" >> release.txt
         
         # 添加源码信息
-        echo "" >> release.txt
-        echo "## 📦 源码信息" >> release.txt
-        cd openwrt
-        echo "- 📍 仓库: $REPO_URL" >> ../release.txt
-        echo "- 🌿 分支: $(git branch --show-current)" >> ../release.txt
-        echo "- 📝 提交: $(git log --oneline -1)" >> ../release.txt
-        cd ..
+        # echo "" >> release.txt
+        # echo "## 📦 源码信息" >> release.txt
+        # cd openwrt
+        # echo "- 📍 仓库: $REPO_URL" >> ../release.txt
+        # echo "- 🌿 分支: $(git branch --show-current)" >> ../release.txt
+        # echo "- 📝 提交: $(git log --oneline -1)" >> ../release.txt
+        # cd ..
         
         # 生成发布标签（按要求格式：编译完成时间 - 固件型号 - WiFi控制方式 - 第三方eeprom）
         #release_tag="${compile_time}-${{ env.DEVICE_NAME }}-${wlan_interface}-${eeprom_status}"
-        release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}-${max_frequency}MHz")
+        release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_interface}-${eeprom_status}")
         
         # 添加频率信息到标签（如果不是默认值）
         if [ "$max_frequency" != "default" ] && [ "$max_frequency" != "unknown" ]; then
