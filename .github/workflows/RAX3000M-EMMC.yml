@@ -10,8 +10,9 @@
 
 name: Build RAX3000M eMMC
 
-permissions: write-all
-# 开启写权限，防止无法上传到release
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -47,194 +48,514 @@ env:
   UPLOAD_FIRMWARE: false
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
+  DEVICE_NAME: RAX3000M_eMMC
+  CCACHE_DIR: ~/.ccache
+  CCACHE_MAXSIZE: 2G
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: 检查
-      uses: actions/checkout@main
+    - name: 检查项目文件
+      uses: actions/checkout@v4
 
-    - name: 释放磁盘空间
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: true
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        swap-storage: true
-
-    - name: 清理缓存（可选）
-      if: github.event.inputs.CLEAN_CACHE == 'true'
-      run: |
-        echo "⚠️ 清理缓存中..."
-        rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
-
-    # 缓存工具链和 ccache
-    - name: 缓存工具链与编译缓存
-      uses: actions/cache@v3
-      with:
-        path: |
-          openwrt/staging_dir
-          openwrt/build_dir
-          openwrt/tmp
-          openwrt/dl
-          ~/.ccache
-        key: ${{ runner.os }}-openwrt-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-openwrt-
-
-#    - name: 开启 ccache
-#      uses: klever1988/cachewrtbuild@main
-#      with:
-#        ccache: 'true'
-#        mixkey: 'openwrt21-cortexa53'
-#        prefix: ${{ github.workspace }}/openwrt
-
-    - name: 初始化环境
-      env:
-        DEBIAN_FRONTEND: noninteractive
+    - name: 设置环境变量
       run: |
         echo "USE_MTWIFI_CFG=${{ github.event.inputs.USE_MTWIFI_CFG }}" >> $GITHUB_ENV
         echo "USE_NX30PRO_EEPROM=${{ github.event.inputs.USE_NX30PRO_EEPROM }}" >> $GITHUB_ENV
         echo "USE_52MHZ=${{ github.event.inputs.USE_52MHZ }}" >> $GITHUB_ENV
-        chmod +x $FREE_DISK_SH && $FREE_DISK_SH
-        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        sudo -E apt-get -qq update -y
-        sudo -E apt-get -qq full-upgrade -y
-        chmod +x $ENV_SH && $ENV_SH
+        echo "CLEAN_CACHE=${{ github.event.inputs.CLEAN_CACHE }}" >> $GITHUB_ENV
+
+    - name: 计算缓存时间戳和键值
+      id: cache-timestamp
+      run: |
+        # 计算2周前的时间戳
+        two_weeks_ago=$(date -d "14 days ago" +%s)
+        current_week=$(date +%Y-W%U)
+        
+        # 生成基于输入参数的缓存键后缀
+        cache_suffix=""
+        [ "${{ github.event.inputs.USE_MTWIFI_CFG }}" == "true" ] && cache_suffix="${cache_suffix}-mtwifi"
+        [ "${{ github.event.inputs.USE_NX30PRO_EEPROM }}" == "true" ] && cache_suffix="${cache_suffix}-nx30pro"
+        [ "${{ github.event.inputs.USE_52MHZ }}" == "true" ] && cache_suffix="${cache_suffix}-52mhz"
+        
+        cache_key="openwrt-toolchain-${current_week}${cache_suffix}"
+        
+        echo "cache_key=${cache_key}" >> $GITHUB_OUTPUT
+        echo "two_weeks_ago=${two_weeks_ago}" >> $GITHUB_OUTPUT
+        echo "🔑 使用缓存键: ${cache_key}"
+
+    - name: 释放磁盘空间（系统清理）
+      run: |
+        echo "🧹 开始清理系统空间..."
+        
+        # 显示清理前的空间使用情况
+        echo "清理前的磁盘使用情况："
+        df -hT
+        
+        # 删除大型软件包和工具链
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /opt/hostedtoolcache
+        sudo rm -rf /usr/local/.ghcup
+        sudo rm -rf /usr/share/swift
+        
+        # 清理包管理器缓存
+        sudo apt-get clean
+        sudo apt-get autoremove -y --purge
+        
+        # 清理 Docker（如果存在）
+        if command -v docker > /dev/null 2>&1; then
+          docker system prune -a -f || true
+        fi
+        
+        # 清理 snap 缓存
+        if command -v snap > /dev/null 2>&1; then
+          sudo snap list --all | awk '/disabled/{print $1, $3}' | while read snapname revision; do
+            sudo snap remove "$snapname" --revision="$revision" 2>/dev/null || true
+          done
+        fi
+        
+        # 清理临时文件
+        sudo rm -rf /tmp/*
+        sudo rm -rf /var/tmp/*
+        
+        echo "✅ 系统空间清理完成"
+        echo "清理后的磁盘使用情况："
+        df -hT
+
+    - name: 检查并清理过期工具链缓存
+      run: |
+        if [ "${{ env.CLEAN_CACHE }}" == "true" ]; then
+          echo "🗑️ 手动清理所有缓存..."
+          sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
+        else
+          # 检查缓存目录的修改时间
+          cache_expired=false
+          
+          for dir in "openwrt/staging_dir" "openwrt/build_dir" "~/.ccache"; do
+            if [ -d "$dir" ]; then
+              cache_time=$(stat -c %Y "$dir" 2>/dev/null || echo 0)
+              if [ $cache_time -lt ${{ steps.cache-timestamp.outputs.two_weeks_ago }} ]; then
+                echo "📅 缓存目录 $dir 超过2周，标记为过期"
+                cache_expired=true
+              fi
+            fi
+          done
+          
+          if [ "$cache_expired" = "true" ]; then
+            echo "🕐 发现过期缓存，清理旧工具链..."
+            sudo rm -rf openwrt/staging_dir openwrt/build_dir openwrt/tmp openwrt/dl ~/.ccache
+            echo "✅ 过期缓存清理完成，将进行全新编译"
+          else
+            echo "✅ 缓存仍然有效，将使用现有工具链加速编译"
+          fi
+        fi
+
+    - name: 缓存工具链与编译缓存
+      uses: actions/cache@v4
+      with:
+        path: |
+          openwrt/staging_dir
+          openwrt/build_dir/toolchain-*
+          openwrt/build_dir/host
+          openwrt/tmp
+          openwrt/dl
+          ~/.ccache
+        key: ${{ steps.cache-timestamp.outputs.cache_key }}-${{ hashFiles('**/feeds.conf.default') }}
+        restore-keys: |
+          ${{ steps.cache-timestamp.outputs.cache_key }}-
+        save-always: true
+
+    - name: 初始化编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "🔧 初始化编译环境..."
+        
+        # 设置时区
         sudo timedatectl set-timezone "$TZ"
+        
+        # 更新软件包列表
+        sudo -E apt-get -qq update -y
+        
+        # 升级系统（可选，根据需要启用）
+        # sudo -E apt-get -qq full-upgrade -y
+        
+        # 执行环境设置脚本
+        if [ -f "$ENV_SH" ]; then
+          chmod +x $ENV_SH && $ENV_SH
+        else
+          echo "⚠️ 环境设置脚本 $ENV_SH 不存在，跳过"
+        fi
+        
+        # 创建工作目录
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
+        
+        # 配置 ccache
+        mkdir -p ~/.ccache
+        echo "max_size = $CCACHE_MAXSIZE" > ~/.ccache/ccache.conf
+        echo "compression = true" >> ~/.ccache/ccache.conf
+        
+        echo "✅ 环境初始化完成"
 
     - name: 检查空间使用情况
       if: (!cancelled())
-      run: df -hT
+      run: |
+        echo "📊 当前磁盘使用情况："
+        df -hT
+        echo ""
+        echo "📁 /workdir 目录信息："
+        ls -la /workdir/ || echo "目录不存在或为空"
 
     - name: 克隆源码
       working-directory: /workdir
       run: |
-        git clone $REPO_URL openwrt
+        echo "📥 开始克隆源码..."
+        git clone --depth 1 $REPO_URL openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        echo "✅ 源码克隆完成"
+        
+        # 显示源码信息
+        cd openwrt
+        echo "📋 源码信息:"
+        echo "分支: $(git branch --show-current)"
+        echo "提交: $(git log --oneline -1)"
 
-    - name: 更新 & 安装 feeds & 执行脚本
+    - name: 更新 feeds 并安装依赖
       run: |
         cd openwrt
+        
+        # 配置 git 用户信息
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        ./scripts/feeds update -a && ./scripts/feeds install -a
-        curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile
-        chmod +x $GITHUB_WORKSPACE/$DIY_SH && $GITHUB_WORKSPACE/$DIY_SH        
+        
+        echo "📦 更新 feeds..."
+        ./scripts/feeds update -a
+        
+        echo "📦 安装 feeds..."
+        ./scripts/feeds install -a
+        
+        # 更新 xray-core Makefile
+        echo "🔄 更新 xray-core Makefile..."
+        if curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile; then
+          echo "✅ xray-core Makefile 更新成功"
+        else
+          echo "⚠️ xray-core Makefile 更新失败，继续使用原版本"
+        fi
+        
+        # 执行自定义脚本
+        if [ -f "$GITHUB_WORKSPACE/$DIY_SH" ]; then
+          echo "🔧 执行自定义配置脚本..."
+          chmod +x $GITHUB_WORKSPACE/$DIY_SH && $GITHUB_WORKSPACE/$DIY_SH
+        else
+          echo "⚠️ 自定义脚本 $DIY_SH 不存在，跳过"
+        fi
 
-    - name: 导入补丁和配置
+    - name: 导入补丁和基础配置
       run: |
-        [ -e files ] && mv files openwrt/files
-        cat configs/rax3000m-emmc.config >> openwrt/.config
+        echo "⚙️ 导入配置文件..."
+        
+        # 复制自定义文件
+        if [ -d "files" ]; then
+          echo "📁 复制自定义文件..."
+          mv files openwrt/files
+        fi
+        
+        # 导入基础配置
+        if [ -f "configs/rax3000m-emmc.config" ]; then
+          echo "📋 导入基础配置..."
+          cat configs/rax3000m-emmc.config >> openwrt/.config
+        else
+          echo "❌ 基础配置文件不存在: configs/rax3000m-emmc.config"
+          exit 1
+        fi
 
-    - name: 设置无线控制界面样式
+    - name: 配置无线控制界面
       if: env.USE_MTWIFI_CFG == 'true'
       run: |
-        sed -i '/CONFIG_PACKAGE_luci-app-mtk=y/{N;N;N;s/CONFIG_PACKAGE_luci-app-mtk=y\nCONFIG_PACKAGE_luci-i18n-mtk-zh-cn=y\nCONFIG_PACKAGE_wifi-profile=y\nCONFIG_WIFI_NORMAL_SETTING=y/CONFIG_PACKAGE_lua-cjson=y\nCONFIG_PACKAGE_luci-app-mtwifi-cfg=y\nCONFIG_PACKAGE_luci-i18n-mtwifi-cfg-zh-cn=y\nCONFIG_PACKAGE_mtwifi-cfg=y/}' openwrt/.config
+        echo "📡 配置使用 mtwifi-cfg 无线控制界面..."
+        cd openwrt
+        
+        # 备份原配置
+        cp .config .config.bak
+        
+        # 替换无线控制配置
+        if sed -i '/CONFIG_PACKAGE_luci-app-mtk=y/{N;N;N;s/CONFIG_PACKAGE_luci-app-mtk=y\nCONFIG_PACKAGE_luci-i18n-mtk-zh-cn=y\nCONFIG_PACKAGE_wifi-profile=y\nCONFIG_WIFI_NORMAL_SETTING=y/CONFIG_PACKAGE_lua-cjson=y\nCONFIG_PACKAGE_luci-app-mtwifi-cfg=y\nCONFIG_PACKAGE_luci-i18n-mtwifi-cfg-zh-cn=y\nCONFIG_PACKAGE_mtwifi-cfg=y/}' .config; then
+          echo "✅ 无线控制界面配置完成"
+        else
+          echo "⚠️ 无线控制界面配置可能失败，检查配置..."
+          diff .config.bak .config || true
+        fi
 
-    - name: 设置是否使用 nx30pro eeprom
+    - name: 配置第三方 eeprom
       if: env.USE_NX30PRO_EEPROM == 'true'
       run: |
-        mkdir -p openwrt/target/linux/mediatek/mt7981/base-files/lib/firmware
-        cp eeprom/nx30pro_eeprom.bin openwrt/target/linux/mediatek/mt7981/base-files/lib/firmware/MT7981_iPAiLNA_EEPROM.bin
-        sed -i 's/caldata_extract_mmc/# caldata_extract_mmc/' openwrt/target/linux/mediatek/mt7981/base-files/lib/preinit/90_extract_caldata
-        sed -i 's#./files/mt7981-default-eeprom/MT7981_iPAiLNA_EEPROM.bin##' openwrt/package/mtk/drivers/mt_wifi/Makefile
+        echo "📡 配置使用 nx30pro eeprom..."
+        cd openwrt
+        
+        # 创建固件目录
+        target_dir="target/linux/mediatek/mt7981/base-files/lib/firmware"
+        mkdir -p "$target_dir"
+        
+        # 复制 eeprom 文件
+        if [ -f "$GITHUB_WORKSPACE/eeprom/nx30pro_eeprom.bin" ]; then
+          cp "$GITHUB_WORKSPACE/eeprom/nx30pro_eeprom.bin" "$target_dir/MT7981_iPAiLNA_EEPROM.bin"
+          echo "✅ nx30pro eeprom 文件复制成功"
+        else
+          echo "❌ nx30pro eeprom 文件不存在: eeprom/nx30pro_eeprom.bin"
+          exit 1
+        fi
+        
+        # 修改相关配置文件
+        preinit_file="target/linux/mediatek/mt7981/base-files/lib/preinit/90_extract_caldata"
+        if [ -f "$preinit_file" ]; then
+          sed -i 's/caldata_extract_mmc/# caldata_extract_mmc/' "$preinit_file"
+          echo "✅ preinit 脚本修改完成"
+        fi
+        
+        makefile_path="package/mtk/drivers/mt_wifi/Makefile"
+        if [ -f "$makefile_path" ]; then
+          sed -i 's#./files/mt7981-default-eeprom/MT7981_iPAiLNA_EEPROM.bin##' "$makefile_path"
+          echo "✅ WiFi 驱动 Makefile 修改完成"
+        fi
 
-    - name: 设置 dts 闪存频率
+    - name: 配置闪存频率
       if: env.USE_52MHZ == 'true'
       run: |
-        sed -i -e '/bus-width = <8>;/ a\	cap-mmc-highspeed;' openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts
-        sed -i 's/26000000/52000000/g' openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts
-        grep max-frequency openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts
+        echo "⚡ 配置使用 52MHz 闪存频率..."
+        cd openwrt
+        
+        dts_file="target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts"
+        
+        if [ -f "$dts_file" ]; then
+          # 添加高速模式配置
+          sed -i -e '/bus-width = <8>;/ a\	cap-mmc-highspeed;' "$dts_file"
+          
+          # 修改频率设置
+          sed -i 's/26000000/52000000/g' "$dts_file"
+          
+          echo "✅ 闪存频率配置完成"
+          echo "当前 max-frequency 配置:"
+          grep max-frequency "$dts_file" || echo "未找到 max-frequency 配置"
+        else
+          echo "❌ DTS 文件不存在: $dts_file"
+          exit 1
+        fi
 
-    - name: 下载文件
+    - name: 预设 Clash 核心和下载依赖
       run: |
         cd openwrt
-        chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
+        
+        # 执行 Clash 核心预设脚本
+        if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
+          echo "🔧 预设 Clash 核心..."
+          chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
+        fi
+        
+        # 生成默认配置
+        echo "⚙️ 生成默认配置..."
         make defconfig
-        make download -j8 V=10
+        
+        # 下载编译依赖
+        echo "📥 下载编译依赖包..."
+        make download -j$(nproc) V=10
+        
+        # 清理无效的小文件
+        echo "🧹 清理无效下载文件..."
         find dl -size -1024c -exec rm -f {} \;
+        
+        echo "✅ 依赖下载完成"
 
-    - name: 编译固件中
+    - name: 编译固件
       id: compile
       run: |
         cd openwrt
-        echo -e "$(($(nproc)+1)) thread compile"
-        make -j$(($(nproc)+1)) || make -j$(nproc) || make -j1 V=s
-        echo "status=success" >> $GITHUB_OUTPUT
+        
+        # 显示编译信息
+        echo "🔨 开始编译固件..."
+        echo "编译线程数: $(($(nproc)+1))"
+        echo "CPU 核心数: $(nproc)"
+        echo "内存使用情况:"
+        free -h
+        
+        # 记录编译开始时间
+        compile_start=$(date '+%Y-%m-%d %H:%M:%S')
+        echo "编译开始时间: $compile_start"
+        
+        # 尝试多线程编译，失败时逐步降级
+        compile_success=false
+        
+        if make -j$(($(nproc)+1)); then
+          compile_success=true
+          echo "✅ 多线程编译成功"
+        elif make -j$(nproc); then
+          compile_success=true
+          echo "✅ 标准多线程编译成功"
+        elif make -j1 V=s; then
+          compile_success=true
+          echo "✅ 单线程详细编译成功"
+        fi
+        
+        # 记录编译结束时间
+        compile_end=$(date '+%Y-%m-%d %H:%M:%S')
+        echo "编译结束时间: $compile_end"
+        
+        # 检查编译结果
+        if [ "$compile_success" = "true" ] && [ -d "bin/targets" ]; then
+          firmware_count=$(find bin/targets -name "*.bin" -o -name "*.img" | wc -l)
+          if [ $firmware_count -gt 0 ]; then
+            echo "✅ 编译成功完成，生成了 $firmware_count 个固件文件"
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "compile_time=$(date '+%Y.%m.%d_%H:%M:%S')" >> $GITHUB_OUTPUT
+          else
+            echo "❌ 编译失败：未找到固件文件"
+            echo "status=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        else
+          echo "❌ 编译失败"
+          echo "status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
 
-    - name: 空间使用情况
+    - name: 检查编译后空间使用
       if: (!cancelled())
-      run: df -hT
+      run: |
+        echo "📊 编译后磁盘使用情况："
+        df -hT
+        echo ""
+        echo "📁 编译输出目录大小："
+        if [ -d "openwrt/bin" ]; then
+          du -sh openwrt/bin
+        fi
 
-    - name: 上传 bin 目录
-      uses: actions/upload-artifact@main
+    - name: 上传 bin 目录到 Artifacts
+      uses: actions/upload-artifact@v4
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
-        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        name: OpenWrt_bin_${{ env.DEVICE_NAME }}_${{ steps.compile.outputs.compile_time }}
         path: openwrt/bin
+        retention-days: 5
 
-    - name: 整理文件
+    - name: 整理固件文件
       id: organize
       if: steps.compile.outputs.status == 'success'
       run: |
         cd openwrt/bin/targets/*/*
+        
+        # 删除不需要的文件
         rm -rf *.buildinfo *.json *.manifest packages
+        
+        # 显示剩余文件
+        echo "📁 固件文件列表:"
+        ls -la
+        
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 上传固件目录
-      uses: actions/upload-artifact@main
+    - name: 上传固件到 Artifacts
+      uses: actions/upload-artifact@v4
       if: env.UPLOAD_FIRMWARE == 'true' && steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        name: OpenWrt_firmware_${{ env.DEVICE_NAME }}_${{ steps.compile.outputs.compile_time }}
         path: ${{ env.FIRMWARE }}
+        retention-days: 7
 
-    - name: 生成发布标签
+    - name: 生成发布标签和说明
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
-        echo -e "### immortalwrt-mt7981-cmcc_rax3000m-emmc" >> release.txt
-        wlan_luci_interface=""
+        echo "🏷️ 生成发布标签..."
+        
+        # 获取编译完成时间
+        compile_time="${{ steps.compile.outputs.compile_time }}"
+        
+        # 确定WiFi控制界面类型
+        wlan_interface="unknown"
         if grep -q 'CONFIG_PACKAGE_mtwifi-cfg=y' openwrt/.config; then
-          echo "- 使用 OpenWrt 原生无线控制界面" >> release.txt
-          wlan_luci_interface="mtwifi-cfg"
+          echo "- 🌐 使用 OpenWrt 原生无线控制界面 (mtwifi-cfg)" >> release.txt
+          wlan_interface="mtwifi-cfg"
+        elif grep -q 'CONFIG_PACKAGE_luci-app-mtk=y' openwrt/.config; then
+          echo "- 🌐 使用 MTK SDK 无线控制界面 (luci-app-mtk)" >> release.txt  
+          wlan_interface="luci-app-mtk"
         else
-          echo "- 使用 MTK SDK 无线控制界面" >> release.txt
-          wlan_luci_interface="luci-app-mtk"
+          echo "- ❓ 未知无线控制界面类型" >> release.txt
         fi
-        eeprom_status=""
-        if [ -e openwrt/target/linux/mediatek/mt7981/base-files/lib/firmware/MT7981_iPAiLNA_EEPROM.bin ] ; then
-          echo "- eeprom 使用 H3C NX30 Pro 提取版本" >> release.txt
+        
+        # 确定 eeprom 状态
+        eeprom_status="default_eeprom"
+        if [ -f "openwrt/target/linux/mediatek/mt7981/base-files/lib/firmware/MT7981_iPAiLNA_EEPROM.bin" ]; then
+          echo "- 📡 eeprom 使用 H3C NX30 Pro 提取版本" >> release.txt
           eeprom_status="nx30pro_eeprom"
         else
-          echo "- eeprom 未修改" >> release.txt
-          eeprom_status="default_eeprom"
+          echo "- 📡 使用默认 eeprom 设置" >> release.txt
         fi
-        max_frequency=$(($(grep -oP "max-frequency = <\K[0-9]*" openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts) / 1000000))
-        echo "- 使用闪存频率: ${max_frequency}MHz" >> release.txt
-        release_tag=$(date +"%Y.%m.%d-mt7981-cmcc_rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}-${max_frequency}MHz")
+        
+        # 获取闪存频率配置
+        dts_file="openwrt/target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts"
+        max_frequency="unknown"
+        if [ -f "$dts_file" ]; then
+          max_frequency_hz=$(grep -oP "max-frequency = <\K[0-9]*" "$dts_file" | head -1)
+          if [ -n "$max_frequency_hz" ] && [ "$max_frequency_hz" -gt 0 ]; then
+            max_frequency=$((max_frequency_hz / 1000000))
+            echo "- ⚡ 闪存频率: ${max_frequency}MHz" >> release.txt
+          else
+            echo "- ⚡ 闪存频率: 默认设置" >> release.txt
+            max_frequency="default"
+          fi
+        else
+          echo "- ⚡ 闪存频率: 配置文件未找到" >> release.txt
+        fi
+        
+        # 添加编译信息
+        echo "" >> release.txt
+        echo "## 📋 编译信息" >> release.txt
+        echo "- 🕐 编译完成时间: $compile_time" >> release.txt
+        echo "- 🖥️ 编译环境: Ubuntu 22.04" >> release.txt
+        echo "- 🔧 编译器: GCC $(cd openwrt && make val.GCCV 2>/dev/null || echo 'Unknown')" >> release.txt
+        
+        # 添加源码信息
+        echo "" >> release.txt
+        echo "## 📦 源码信息" >> release.txt
+        cd openwrt
+        echo "- 📍 仓库: $REPO_URL" >> ../release.txt
+        echo "- 🌿 分支: $(git branch --show-current)" >> ../release.txt
+        echo "- 📝 提交: $(git log --oneline -1)" >> ../release.txt
+        cd ..
+        
+        # 生成发布标签（按要求格式：编译完成时间 - 固件型号 - WiFi控制方式 - 第三方eeprom）
+        #release_tag="${compile_time}-${{ env.DEVICE_NAME }}-${wlan_interface}-${eeprom_status}"
+        release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}-${max_frequency}MHz")
+        
+        # 添加频率信息到标签（如果不是默认值）
+        if [ "$max_frequency" != "default" ] && [ "$max_frequency" != "unknown" ]; then
+          release_tag="${release_tag}-${max_frequency}MHz"
+        fi
+        
+        echo "🏷️ 发布标签: $release_tag"
         echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 上传固件发布
-      uses: softprops/action-gh-release@v1
+    - name: 发布固件到 Release
+      uses: softprops/action-gh-release@v2
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
+        name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
+        draft: false
+        prerelease: false
 
-    - name: 删除旧发布的固件
-      uses: dev-drprasad/delete-older-releases@v0.2.1
+    - name: 清理旧版本发布
+      uses: dev-drprasad/delete-older-releases@v0.3.0
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
       with:
         keep_latest: 7
@@ -242,8 +563,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 删除过时工作流程
+    - name: 清理过时的工作流运行
       uses: Mattraks/delete-workflow-runs@v2
+      if: always()
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         repository: ${{ github.repository }}
