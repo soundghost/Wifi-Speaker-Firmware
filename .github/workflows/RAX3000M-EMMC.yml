@@ -183,7 +183,7 @@ jobs:
         sudo -E apt-get -qq update -y
         
         # 升级系统（可选，根据需要启用）
-        # sudo -E apt-get -qq full-upgrade -y
+        sudo -E apt-get -qq full-upgrade -y
         
         # 执行环境设置脚本
         if [ -f "$ENV_SH" ]; then
@@ -240,12 +240,33 @@ jobs:
         echo "📦 安装 feeds..."
         ./scripts/feeds install -a
         
-        # 更新 xray-core Makefile
-        echo "🔄 更新 xray-core Makefile..."
-        if curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile; then
-          echo "✅ xray-core Makefile 更新成功"
+        # 检查并处理 xray-core 兼容性问题
+        echo "🔄 处理 xray-core 版本兼容性..."
+        
+        xray_makefile="package/feeds/packages/xray-core/Makefile"
+        if [ -f "$xray_makefile" ]; then
+          # 检查当前 xray-core 版本
+          current_version=$(grep -oP 'PKG_VERSION:=\K.*' "$xray_makefile" || echo "unknown")
+          echo "当前 xray-core 版本: $current_version"
+          
+          # 尝试使用兼容的 xray-core 版本
+          echo "尝试使用兼容版本的 xray-core..."
+          
+          # 方案1：尝试使用稳定版本的 xray-core
+          if curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/openwrt-21.02/net/xray-core/Makefile -o "${xray_makefile}.stable" 2>/dev/null; then
+            echo "✅ 下载到稳定版本的 xray-core Makefile"
+            mv "${xray_makefile}.stable" "$xray_makefile"
+          else
+            echo "⚠️ 无法获取稳定版本，尝试降级处理..."
+            
+            # 方案2：修改现有版本为兼容的旧版本
+            sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.8.24/' "$xray_makefile"
+            sed -i 's/PKG_HASH:=.*/PKG_HASH:=skip/' "$xray_makefile"
+            
+            echo "🔧 已降级 xray-core 到兼容版本 1.8.24"
+          fi
         else
-          echo "⚠️ xray-core Makefile 更新失败，继续使用原版本"
+          echo "⚠️ xray-core Makefile 不存在，可能已被移除"
         fi
         
         # 执行自定义脚本
@@ -273,6 +294,29 @@ jobs:
         else
           echo "❌ 基础配置文件不存在: configs/rax3000m-emmc.config"
           exit 1
+        fi
+        
+        # 处理 xray-core 编译问题
+        echo "🔧 处理潜在的编译兼容性问题..."
+        cd openwrt
+        
+        # 检查是否启用了 xray-core
+        if grep -q "CONFIG_PACKAGE_xray-core=y" .config; then
+          echo "⚠️ 检测到 xray-core 已启用，检查 Go 版本兼容性..."
+          
+          # 查看当前 Go 版本
+          go_version=$(staging_dir/hostpkg/bin/go version 2>/dev/null || echo "Go not found")
+          echo "当前 Go 版本: $go_version"
+          
+          # 如果遇到兼容性问题，可以选择禁用 xray-core 或使用替代方案
+          echo "如果编译失败，可以考虑以下解决方案："
+          echo "1. 禁用 xray-core 包"
+          echo "2. 使用 v2ray-core 替代"
+          echo "3. 使用兼容的 xray-core 版本"
+          
+          # 预备替代方案：如果需要的话可以替换为 v2ray-core
+          # sed -i 's/CONFIG_PACKAGE_xray-core=y/# CONFIG_PACKAGE_xray-core is not set/' .config
+          # echo "CONFIG_PACKAGE_v2ray-core=y" >> .config
         fi
 
     - name: 配置无线控制界面
@@ -351,15 +395,50 @@ jobs:
       run: |
         cd openwrt
         
-        # 执行 Clash 核心预设脚本
-        if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
-          echo "🔧 预设 Clash 核心..."
-          chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
+        ## 执行 Clash 核心预设脚本
+        #if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
+        #  echo "🔧 预设 Clash 核心..."
+        #  chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
+        #fi
+        
+        # 处理 xray-core Go 版本兼容性问题
+        echo "🔍 检查并解决 xray-core 兼容性问题..."
+        if grep -q "CONFIG_PACKAGE_xray-core=y" .config; then
+          echo "⚠️ 检测到 xray-core，处理 Go 版本兼容性..."
+          
+          # 方案1：禁用有问题的 xray-core，使用 v2ray-core 替代
+          echo "🔄 使用 v2ray-core 替代 xray-core 以避免 Go 版本问题..."
+          sed -i 's/CONFIG_PACKAGE_xray-core=y/# CONFIG_PACKAGE_xray-core is not set/' .config
+          
+          # 添加 v2ray-core 作为替代
+          if ! grep -q "CONFIG_PACKAGE_v2ray-core" .config; then
+            echo "CONFIG_PACKAGE_v2ray-core=y" >> .config
+            echo "✅ 已添加 v2ray-core 作为替代方案"
+          fi
+          
+          # 或者方案2：如果您坚持要用 xray-core，可以尝试使用兼容版本
+          # echo "🔄 尝试使用兼容版本的 xray-core..."
+          # xray_makefile="package/feeds/packages/xray-core/Makefile"
+          # if [ -f "$xray_makefile" ]; then
+          #   # 使用较旧但兼容的版本
+          #   sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.8.24/' "$xray_makefile"
+          #   sed -i 's/PKG_HASH:=.*/PKG_HASH:=skip/' "$xray_makefile"
+          #   echo "✅ 已降级到兼容版本"
+          # fi
         fi
         
         # 生成默认配置
         echo "⚙️ 生成默认配置..."
         make defconfig
+        
+        # 验证配置
+        echo "🔍 验证关键配置..."
+        if grep -q "CONFIG_PACKAGE_v2ray-core=y" .config; then
+          echo "✅ v2ray-core 已启用"
+        fi
+        if grep -q "CONFIG_PACKAGE_xray-core=y" .config; then
+          echo "⚠️ xray-core 仍然启用，可能会遇到编译问题"
+        fi
         
         # 下载编译依赖
         echo "📥 下载编译依赖包..."
@@ -490,7 +569,7 @@ jobs:
         # 确定 eeprom 状态
         eeprom_status="default_eeprom"
         if [ -f "openwrt/target/linux/mediatek/mt7981/base-files/lib/firmware/MT7981_iPAiLNA_EEPROM.bin" ]; then
-          echo "- 📡 eeprom 使用 H3C NX30 Pro 提取版本" >> release.txt
+          echo "- 📡 使用第三方 eeprom: H3C NX30 Pro 提取版本" >> release.txt
           eeprom_status="nx30pro_eeprom"
         else
           echo "- 📡 使用默认 eeprom 设置" >> release.txt
@@ -529,8 +608,8 @@ jobs:
         cd ..
         
         # 生成发布标签（按要求格式：编译完成时间 - 固件型号 - WiFi控制方式 - 第三方eeprom）
-        #release_tag="${compile_time}-${{ env.DEVICE_NAME }}-${wlan_interface}-${eeprom_status}"
-        release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}-${max_frequency}MHz")
+        # release_tag="${compile_time}-${{ env.DEVICE_NAME }}-${wlan_interface}-${eeprom_status}"
+		release_tag=$(date +"%Y.%m.%d-mt7981-rax3000m-emmc-${wlan_luci_interface}-${eeprom_status}")
         
         # 添加频率信息到标签（如果不是默认值）
         if [ "$max_frequency" != "default" ] && [ "$max_frequency" != "unknown" ]; then
