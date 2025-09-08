@@ -7,6 +7,9 @@ sed -i 's/192.168.1.1/192.168.9.1/g' package/base-files/files/bin/config_generat
 rm -rf feeds/packages/lang/golang
 git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
 
+# 更新 xray-core Makefile
+curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile
+
 #删除低版本v2ray-geodata和mosdns
 rm -rf feeds/packages/net/v2ray-geodata
 rm -rf feeds/packages/net/mosdns
@@ -25,8 +28,8 @@ git clone https://github.com/sbwml/luci-app-airconnect.git  package/luci-app-air
 git clone https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
 git clone https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
 git clone https://github.com/destan19/OpenAppFilter package/OpenAppFilter
-git clone --depth=1 https://github.com/fw876/helloworld.git package/helloworld
-git -C package/helloworld pull
+#git clone --depth=1 https://github.com/fw876/helloworld.git package/helloworld
+#git -C package/helloworld pull
 
 #添加360T7 108M 512M-Ram USB支持
 cat >> target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-360-t7-108M.dts << EOF
