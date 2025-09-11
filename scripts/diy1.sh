@@ -3,17 +3,6 @@
 #更改默认地址为192.168.9.1
 sed -i 's/192.168.1.1/192.168.9.1/g' package/base-files/files/bin/config_generate
 
-#删除低版本golang并升级到1.25.x
-rm -rf feeds/packages/lang/golang
-git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
-
-# 更新 xray-core Makefile
-curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile
-
-#删除低版本v2ray-geodata和mosdns
-rm -rf feeds/packages/net/v2ray-geodata
-rm -rf feeds/packages/net/mosdns
-
 #添加软件包
 git clone https://github.com/badaix/snapos.git
 git clone https://github.com/zzsj0928/luci-app-pushbot package/luci-app-pushbot
