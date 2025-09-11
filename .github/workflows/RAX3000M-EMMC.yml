@@ -282,9 +282,12 @@ jobs:
 
         # 建立snapcast软链接
         echo "建立snapcast软链接"
-        cd package
-        ln -s ../snapos/openwrt ./snapcast
-        cd ..
+        if ln -s snapos/openwrt package/snapcast; then
+          echo "建立snapcast软链接成功"
+        else
+          echo "建立snapcast软链接失败，流程将终止"
+          exit 1
+        fi
         
         # 执行第 2 个自定义脚本
         if [ -f "$GITHUB_WORKSPACE/$DIY_SH2" ]; then
