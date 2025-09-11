@@ -3,6 +3,14 @@
 #更改默认地址为192.168.9.1
 #sed -i 's/192.168.1.1/192.168.9.1/g' package/base-files/files/bin/config_generate
 
+#删除低版本v2ray-geodata和mosdns
+find ./ | grep Makefile | grep v2ray-geodata | xargs rm -f
+find ./ | grep Makefile | grep mosdns | xargs rm -f
+rm -rf feeds/packages/net/v2ray-geodata
+rm -rf feeds/packages/net/mosdns
+git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
+git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
+
 #添加软件包
 git clone https://github.com/badaix/snapos.git
 git clone https://github.com/zzsj0928/luci-app-pushbot package/luci-app-pushbot
