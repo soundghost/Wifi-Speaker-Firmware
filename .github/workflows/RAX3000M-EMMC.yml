@@ -402,6 +402,24 @@ jobs:
             echo "无效 IP 地址, 将使用默认地址。"
         fi
 
+    - name: 下载依赖
+      run: |
+        cd openwrt
+       
+        # 生成默认配置
+        echo "⚙️ 生成默认配置..."
+        make defconfig
+        
+        # 下载编译依赖
+        echo "📥 下载编译依赖包..."
+        make download -j$(nproc) V=10
+        
+        # 清理无效的小文件
+        echo "🧹 清理无效下载文件..."
+        find dl -size -1024c -exec rm -f {} \;
+        
+        echo "✅ 依赖下载完成"
+
     - name: 编译固件
       id: compile
       run: |
