@@ -99,12 +99,19 @@ jobs:
         df -hT
         
         # 删除大型软件包和工具链
+        echo "清理dotnet"
         sudo rm -rf /usr/share/dotnet
+        echo "清理anroid"
         sudo rm -rf /usr/local/lib/android
+        echo "清理ghc"
         sudo rm -rf /opt/ghc
+        echo "echo "清理boost"
         sudo rm -rf /usr/local/share/boost
+        echo "清理hostedtoolcache"
         sudo rm -rf /opt/hostedtoolcache
+        echo "清理.ghcup"
         sudo rm -rf /usr/local/.ghcup
+        echo "清理swift"
         sudo rm -rf /usr/share/swift
         
         # 清理包管理器缓存
@@ -113,17 +120,20 @@ jobs:
         
         # 清理 Docker（如果存在）
         if command -v docker > /dev/null 2>&1; then
+          echo "清理Docker"
           docker system prune -a -f || true
         fi
         
         # 清理 snap 缓存
         if command -v snap > /dev/null 2>&1; then
           sudo snap list --all | awk '/disabled/{print $1, $3}' | while read snapname revision; do
+            echo "清理 snap 缓存"
             sudo snap remove "$snapname" --revision="$revision" 2>/dev/null || true
           done
         fi
         
         # 清理临时文件
+        echo "清理临时文件tmp"
         sudo rm -rf /tmp/*
         sudo rm -rf /var/tmp/*
         
@@ -268,6 +278,7 @@ jobs:
         #fi
 
         # 建立snapcast软链接
+        echo "建立snapcast软链接"
         cd package
         ln -s ../snapos/openwrt ./snapcast
         cd ..
@@ -383,34 +394,10 @@ jobs:
             sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" $(find feeds/luci/modules/luci-mod-system -type f -name "flash.js")
             #修改默认IP地址
             sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" package/base-files/files/bin/config_generate
-            echo "Set LAN IP Address: $SET_IP"
+            echo "设置 LAN 口 IP 地址为 $SET_IP 成功！"
         else
-            echo "Invalid IP address, use default."
+            echo "无效 IP 地址, 将使用默认地址。"
         fi
-
-    - name: 预设 Clash 核心和下载依赖
-      run: |
-        cd openwrt
-        
-        # 执行 Clash 核心预设脚本
-        #if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
-        #  echo "🔧 预设 Clash 核心..."
-        #  chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
-        #fi
-        
-        # 生成默认配置
-        echo "⚙️ 生成默认配置..."
-        make defconfig
-        
-        # 下载编译依赖
-        echo "📥 下载编译依赖包..."
-        make download -j$(nproc) V=10
-        
-        # 清理无效的小文件
-        echo "🧹 清理无效下载文件..."
-        find dl -size -1024c -exec rm -f {} \;
-        
-        echo "✅ 依赖下载完成"
 
     - name: 编译固件
       id: compile
