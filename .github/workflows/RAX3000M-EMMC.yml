@@ -197,9 +197,9 @@ jobs:
         sudo chown $USER:$GROUPS /workdir
         
         # 配置 ccache
-        mkdir -p ~/.ccache
-        echo "max_size = $CCACHE_MAXSIZE" > ~/.ccache/ccache.conf
-        echo "compression = true" >> ~/.ccache/ccache.conf
+        #mkdir -p ~/.ccache
+        #echo "max_size = $CCACHE_MAXSIZE" > ~/.ccache/ccache.conf
+        #echo "compression = true" >> ~/.ccache/ccache.conf
         
         echo "✅ 环境初始化完成"
 
@@ -237,9 +237,6 @@ jobs:
         echo "📦 更新 feeds..."
         ./scripts/feeds update -a
         
-        echo "📦 安装 feeds..."
-        ./scripts/feeds install -a
-
         # 执行第 1 个自定义脚本
         if [ -f "$GITHUB_WORKSPACE/$DIY_SH1" ]; then
           echo "🔧 执行第 1 个自定义配置脚本..."
@@ -249,22 +246,27 @@ jobs:
         fi
         
         # 更新 golang 到 1.25.x 版本
-        echo "🔄 更新 golang 到 1.25.x ..."
-        rm -rf feeds/packages/lang/golang
-        if git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang; then
-          echo "✅ golang 更新成功"
-        else
-          echo "⚠️ golang 更新失败，即将退出程序"
-          exit 1
-        fi
+        # echo "🔄 更新 golang 到 1.25.x ..."
+        # rm -rf feeds/packages/lang/golang
+        # if git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang; then
+        #  echo "✅ golang 更新成功"
+        #else
+        #  echo "⚠️ golang 更新失败，即将退出程序"
+        #  exit 1
+        #fi
 
         # 更新 xray-core Makefile
-        echo "🔄 更新 xray-core Makefile..."
-        if curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile; then
-          echo "✅ xray-core Makefile 更新成功"
-        else
-          echo "⚠️ xray-core Makefile 更新失败，继续使用原版本"
-        fi
+        #echo "🔄 更新 xray-core Makefile..."
+        #if curl -sSL https://raw.githubusercontent.com/immortalwrt/packages/refs/heads/master/net/xray-core/Makefile -o package/feeds/packages/xray-core/Makefile; then
+        #  echo "✅ xray-core Makefile 更新成功"
+        #else
+        #  echo "⚠️ xray-core Makefile 更新失败，继续使用原版本"
+        #fi
+
+        # 建立snapcast软链接
+        cd package
+        ln -s ../snapos/openwrt ./snapcast
+        cd ..
         
         # 执行第 2 个自定义脚本
         if [ -f "$GITHUB_WORKSPACE/$DIY_SH2" ]; then
@@ -273,6 +275,9 @@ jobs:
         else
           echo "⚠️ 自定义脚本2 $DIY_SH2 不存在，跳过"
         fi
+
+        echo "📦 安装 feeds..."
+        ./scripts/feeds install -a
 
     - name: 导入补丁和基础配置
       run: |
