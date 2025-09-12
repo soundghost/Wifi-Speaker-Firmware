@@ -567,7 +567,7 @@ jobs:
         echo "- 🕐 编译完成时间: $compile_time" >> release.txt
         echo "- 🖥️ 编译环境: Ubuntu 22.04" >> release.txt
         echo "- 🔧 golang ver:1.25.x | xray-core ver:25.8.3" >> release.txt
-        echo "- 📦 包含以下音乐类软件：airconnect | airplay2 | gmediarender | pianod" >> release.txt
+        echo "- 📦 包含以下音乐类软件：airconnect | airplay2 | upmpdcli | ympd | pianod | snapcast ( server | client )" >> release.txt
         
         # 添加源码信息
         # echo "" >> release.txt
