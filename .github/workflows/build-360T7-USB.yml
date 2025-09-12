@@ -234,7 +234,7 @@ jobs:
         fi
         
         # 导入基础配置
-        if [ -f "configs/rax3000m-emmc.config" ]; then
+        if [ -f "configs/360T7-USB.config" ]; then
           echo "📋 导入基础配置..."
           cat configs/360T7-USB.config >> openwrt/.config
         else
