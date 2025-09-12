@@ -1,3 +1,63 @@
+#### 本项目专注于打造 OpenWrt Wifi 音箱。
+
+除 N1 固件外，都包含下列软件包
+· airconnect
+· airplay2
+· upmpdcli
+· mpd-full
+· ympd
+· pianod
+· snapcast ( server/client )
+
+以下是 mpd 的支持情况：
+```shell
+# mpd -V
+
+Music Player Daemon 0.21.26 (0.21.26)
+Copyright 2003-2007 Warren Dukes <warren.dukes@gmail.com>
+Copyright 2008-2018 Max Kellermann <max.kellermann@gmail.com>
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Database plugins:
+ simple proxy upnp
+
+Storage plugins:
+ local curl
+
+Decoders plugins:
+ [mad] mp3 mp2
+ [vorbis] ogg oga
+ [oggflac] ogg oga
+ [flac] flac
+ [opus] opus ogg oga
+ [faad] aac
+ [pcm]
+
+Filters:
+
+Tag plugins:
+ id3tag
+
+Output plugins:
+ shout null fifo pipe alsa pulse httpd recorder
+
+Encoder plugins:
+ null opus wave flac
+
+Input plugins:
+ file alsa curl mms
+
+Playlist plugins:
+ extm3u m3u pls xspf asx rss soundcloud flac cue embcue
+
+Protocols:
+ file:// alsa:// http:// https:// mms:// mmsh:// mmst:// mmsu://
+
+Other features:
+ epoll iconv inotify ipv6 tcp un
+```
+
 **闭源驱动** | [开源驱动](README_mainline.md)
 
 # Actions-USB-Frimware
