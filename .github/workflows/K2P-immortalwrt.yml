@@ -78,7 +78,6 @@ jobs:
         git config --global user.name "github-actions[bot]"
         #git fetch https://github.com/padavanonly/immortalwrt-mt798x
         #git merge FETCH_HEAD
-        ./scripts/feeds update -a && ./scripts/feeds install -a
         
         # 执行第 1 个自定义脚本
         if [ -f "$GITHUB_WORKSPACE/$DIY_SH1" ]; then
@@ -106,6 +105,10 @@ jobs:
           echo "⚠️ 自定义脚本2 $DIY_SH2 不存在，流程将终止"
           exit 1
         fi
+        
+        # 更新 & 安装 feeds
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
 
     - name: 导入补丁和配置
       run: |
