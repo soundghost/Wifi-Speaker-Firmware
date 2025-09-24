@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build Phicomm K3
+name: Build ImmortalWrt rax3000m emmc
 
 permissions: write-all
 # 开启写权限，防止无法上传到release
@@ -156,6 +156,44 @@ jobs:
         else
           echo "⚠️ xray-core Makefile 更新失败，继续使用原版本"
         fi
+
+        # 更新 upmpdcli Makefile
+        echo "🔄 更新 upmpdcli Makefile..."
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/sound/upmpdcli/Makefile -o feeds/packages/sound/upmpdcli/Makefile; then
+          echo "✅ upmpdcli Makefile 更新成功"
+        else
+          echo "⚠️ upmpdcli Makefile 更新失败，继续使用原版本"
+        fi
+
+        # 更新 mpd
+        echo "🔄 更新 mpd Makefile..."
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/sound/mpd/Makefile -o feeds/packages/sound/mpd/Makefile; then
+          echo "✅ mpd Makefile 更新成功"
+        else
+          echo "⚠️ mpd Makefile 更新失败，继续使用原版本"
+        fi
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/sound/mpd/patches/010-fmt.patch -o feeds/packages/sound/mpd/patches/010-fmt.patch; then
+          echo "✅ mpd patches 更新成功"
+        else
+          echo "⚠️ mpd patches 更新失败，继续使用原版本"
+        fi
+
+        # 更新 pianod Makefile
+        echo "🔄 更新 pianod Makefile..."
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/sound/pianod/Makefile -o feeds/packages/sound/pianod/Makefile; then
+          echo "✅ pianod Makefile 更新成功"
+        else
+          echo "⚠️ pianod Makefile 更新失败，继续使用原版本"
+        fi
+
+        # 更新 mpg123 Makefile
+        echo "🔄 更新 mpg123 Makefile..."
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/sound/mpg123/Makefile -o feeds/packages/sound/mpg123/Makefile; then
+          echo "✅ mpg123 Makefile 更新成功"
+        else
+          echo "⚠️ mpg123 Makefile 更新失败，继续使用原版本"
+        fi
+
         # 建立snapcast软链接
         echo "建立snapcast软链接"
         if ln -s snapos/openwrt package/snapcast; then
@@ -187,8 +225,6 @@ jobs:
           echo "❌ 基础配置文件不存在: configs/k3.config"
           exit 1
         fi
-
-
 
     - name: 设置LAN IP地址（路由器登录地址）
       run: |
