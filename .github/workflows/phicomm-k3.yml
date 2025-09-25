@@ -25,7 +25,7 @@ env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: openwrt-23.05
 
-  ENV_SH: scripts/environment.sh
+  ENV_SH: scripts/imm-environment.sh
   DIY_SH1: scripts/diy1.sh
   DIY_SH2: scripts/diy2.sh
 
