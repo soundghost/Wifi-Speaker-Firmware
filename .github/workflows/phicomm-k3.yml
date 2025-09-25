@@ -139,6 +139,30 @@ jobs:
         else
           echo "⚠️ 自定义脚本1 $DIY_SH1 不存在，跳过"
         fi
+
+        # 更新 rust 版本
+        echo "🔄 更新 rust 到 1.90.0 ..."
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/lang/rust/Makefile -o feeds/packages/lang/rust/Makefile; then
+          echo "✅ rust Makefile 更新成功"
+        else
+          echo "⚠️ rust Makefile 更新失败，即将退出程序"
+          exit 1
+        fi
+
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/lang/rust/rust-values.mk -o feeds/packages/lang/rust/rust-values.mk; then
+          echo "✅ rust-values.mk 更新成功"
+        else
+          echo "⚠️ rust-values.mk 更新失败，即将退出程序"
+          exit 1
+        fi
+
+        if curl -sSL https://github.com/immortalwrt/packages/raw/refs/heads/master/lang/rust/patches/0001-Update-xz2-and-use-it-static.patch -o feeds/packages/lang/rust/patches/0001-Update-xz2-and-use-it-static.patch; then
+          echo "✅ rust patches 更新成功"
+        else
+          echo "⚠️ rust patches 更新失败，即将退出程序"
+          exit 1
+        fi
+        
         # 更新 golang 到 1.25.x 版本
         echo "🔄 更新 golang 到 1.25.x ..."
         rm -rf feeds/packages/lang/golang
