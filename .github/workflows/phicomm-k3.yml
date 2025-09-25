@@ -26,7 +26,7 @@ env:
   REPO_BRANCH: openwrt-23.05
 
   ENV_SH: scripts/imm-environment.sh
-  DIY_SH1: scripts/diy1.sh
+  DIY_SH1: scripts/diy1-1.sh
   DIY_SH2: scripts/diy2.sh
 
   UPLOAD_BIN_DIR: false
@@ -227,12 +227,12 @@ jobs:
           exit 1
         fi
         # 执行第 2 个自定义脚本
-        if [ -f "$GITHUB_WORKSPACE/$DIY_SH2" ]; then
-          echo "🔧 执行第 2 个自定义配置脚本..."
-          chmod +x $GITHUB_WORKSPACE/$DIY_SH2 && $GITHUB_WORKSPACE/$DIY_SH2
-        else
-          echo "⚠️ 自定义脚本2 $DIY_SH2 不存在，跳过"
-        fi
+        #if [ -f "$GITHUB_WORKSPACE/$DIY_SH2" ]; then
+        #  echo "🔧 执行第 2 个自定义配置脚本..."
+        #  chmod +x $GITHUB_WORKSPACE/$DIY_SH2 && $GITHUB_WORKSPACE/$DIY_SH2
+        #else
+        #  echo "⚠️ 自定义脚本2 $DIY_SH2 不存在，跳过"
+        #fi
     - name: 导入补丁和基础配置
       run: |
         echo "⚙️ 导入配置文件..."
@@ -292,10 +292,10 @@ jobs:
         free -h
         # 尝试多线程编译，失败时逐步降级
         compile_success=false
-        if make -j$(($(nproc)+1)); then
+        if make V=10 -j$(($(nproc)+1)); then
           compile_success=true
           echo "✅ 多线程编译成功"
-        elif make -j$(nproc); then
+        elif make V=10 -j$(nproc); then
           compile_success=true
           echo "✅ 标准多线程编译成功"
         elif make -j1 V=s; then
