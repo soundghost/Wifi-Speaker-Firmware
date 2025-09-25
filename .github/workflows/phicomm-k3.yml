@@ -341,7 +341,7 @@ jobs:
       if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
         echo -e "### immortalwrt-23.05-wifi-speaker--phicomm-k3" >> release.txt
-
+        echo "LAN 口 IP 地址为 $SET_IP "
         release_tag=$(date +"%Y.%m.%d-23.05-wifi-speaker-phicomm-K3")
         echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
