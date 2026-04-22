@@ -57,6 +57,36 @@ Other features:
  epoll iconv inotify ipv6 tcp un
 ```
 
+基于 MPD 和 Upmpdcli 打造的 OpenWrt 网络收音机。
+
+所需硬件：
+
+- 带有 USB 的 OpenWRT 路由器
+- USB 声卡
+- 立体声功放与音箱（有源/无源）
+
+收音机ympd（前端）配置地址：http://192.168.X.1:8080
+
+推荐电台：
+
+```
+http://stream.radioparadise.com/aac-128
+http://stream.radioparadise.com/mellow-192
+http://stream.radioparadise.com/rock-192
+http://stream.radioparadise.com/eclectic-192
+https://n14.rcs.revma.com/ndk05tyy2tzuv?rj-ttl=5&rj-tok=AAABmUNwdvQAgQIo-1yNtVVOSA
+https://cdn0-47115-liveicecast0.dna.contentdelivery.net/jazz_mp3_h
+https://stream02.pcradio.biz/smoothjazz247-med
+https://stream02.pcradio.biz/bluesradio_gr-med
+https://stream02.pcradio.biz/taiwan_lounge-hi
+https://rawlco.leanstream.co/CJDJFM?args=web_01&starttime=1596111665
+https://n06.rcs.revma.com/aw9uqyxy2tzuv?rj-ttl=5&rj-tok=AAABmUNx4GMAojPI-EJMq1_ATg
+https://pub0101.101.ru/stream/trust/mp3/128/264
+https://radiorecord.hostingradio.ru/chil96.aacp
+https://hermitage.hostingradio.ru/hermitage128.mp3
+https://cdn0-47115-liveicecast0.dna.contentdelivery.net/jazz_mp3_h?nrkjazz
+```
+
 **闭源驱动** | [开源驱动](README_mainline.md)
 
 # Actions-USB-Frimware
