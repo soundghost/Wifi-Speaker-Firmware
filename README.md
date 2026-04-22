@@ -1,7 +1,6 @@
 #### 本项目专注于打造 OpenWrt Wifi 音箱。
 
-除 N1 固件外，都包含下列软件包
-· airconnect
+包含下列软件包
 · airplay2
 · upmpdcli
 · mpd-full
@@ -73,7 +72,7 @@ Other features:
 项目详情：[immortalwrt-mt798x项目介绍](https://cmi.hanwckf.top/p/immortalwrt-mt798x)
 
 固件默认选中软件包
-`block-mount、automount、chinadns-ng、curl、e2fsprogs、fdisk、hd-idle、ipv6helper、kmod-sound-core、kmod-usb-audio、kmod-usb-core、kmod-usb-ehci、kmod-usb-ohci、kmod-usb-uhci、kmod-usb-storage、kmod-usb2、kmod-usb3、kmod-wireguard、ksmbd-server、nano` 等，K2P 由于空间小（32M），未包含部分软件。
+`block-mount、automount、chinadns-ng、curl、e2fsprogs、fdisk、hd-idle、ipv6helper、kmod-sound-core、kmod-usb-audio、kmod-usb-core、kmod-usb-ehci、kmod-usb-ohci、kmod-usb-uhci、kmod-usb-storage、kmod-usb2、kmod-usb3、kmod-wireguard、ksmbd-server、nano` 等，K2P、GHL 由于空间小（32M），未包含部分软件。
 
 添加集成软件包
 `luci-app-alist、luci-app-appfilter、luci-app-aria2、luci-app-airconnect、luci-app-cpulimit、luci-app-ddns-go、luci-app-airplay2、luci-app-eqos-mtk、luci-app-hd-idle、luci-app-ksmbd、luci-app-netdata、luci-app-pushbot、luci-app-timecontrol、luci-app-ttyd、luci-app-turboacc-mtk、luci-app-unblockneteasemusic、luci-app-upnp、luci-app-vlmcsd、luci-app-watchcat、luci-app-wireguard`，K2P（32M）由于空间限制，未包含全部。
@@ -85,7 +84,7 @@ Other features:
 在 Actions 选择该工作流手动点击 Run workflow 执行编译，等待固件编译完成上传至 releases 发布即可下载
 
 ### 配置说明
-- 默认 LAN IP 已更改为 `192.168.9.1`，可在 `scripts/diy.sh` 处修改
+- 默认 LAN IP 可在 `scripts/diy.sh` 处修改，或者在编译开始时设置。
 
 - 默认构建使用 OpenWrt 原生 luci 无线控制界面，如需使用 MTK SDK 无线控制界面 (luci-app-mtk) 请在 Run workflow 时取消勾选 “Use mtwifi-cfg”，或在 workflow 配置文件中将 `USE_MTWIFI_CFG` 中 `default: true` 的 true 改为 false，重新编译刷入使用
 
