@@ -16,6 +16,10 @@ permissions: write-all
 on:
   workflow_dispatch:
     inputs:
+      LAN_IP:
+        description: 'Set LAN IP Address'
+        required: true
+        default: '192.168.1.1'
       USE_MTWIFI_CFG:
         description: 'Use mtwifi-cfg'
         required: true
