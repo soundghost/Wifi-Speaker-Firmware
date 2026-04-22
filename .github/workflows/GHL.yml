@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build K2P 32M USB
+name: Build GHL-01
 
 permissions: write-all
 # 开启写权限，防止无法上传到release
