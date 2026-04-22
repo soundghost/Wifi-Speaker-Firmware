@@ -83,7 +83,7 @@ jobs:
     - name: 导入补丁和配置
       run: |
         [ -e files ] && mv files openwrt/files
-        cat configs/k2p-32M-USB.config >> openwrt/.config
+        cat configs/GHL.config >> openwrt/.config
 
     - name: 下载文件
       run: |
