@@ -17,26 +17,10 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      USE_MTWIFI_CFG:
-        description: 'Use mtwifi-cfg'
+      LAN_IP:
+        description: 'Set LAN IP Address'
         required: true
-        default: false
-        type: boolean
-      USE_NX30PRO_EEPROM:
-        description: 'Use nx30pro eeprom'
-        required: true
-        default: false
-        type: boolean
-      USE_52MHZ:
-        description: 'Use 52MHz max-frequency'
-        required: true
-        default: false
-        type: boolean
-      CLEAN_CACHE:
-        description: '手动清理缓存并强制全新编译'
-        required: true
-        default: false
-        type: boolean
+        default: '192.168.1.1'
 
 env:
   REPO_URL: https://github.com/hanwckf/immortalwrt-mt798x
@@ -293,101 +277,19 @@ jobs:
           exit 1
         fi
 
-    - name: 配置无线控制界面
-      if: env.USE_MTWIFI_CFG == 'true'
+    - name: 设置LAN IP地址（路由器登录地址）
       run: |
-        echo "📡 配置使用 mtwifi-cfg 无线控制界面..."
         cd openwrt
-        
-        # 备份原配置
-        cp .config .config.bak
-        
-        # 替换无线控制配置
-        if sed -i '/CONFIG_PACKAGE_luci-app-mtk=y/{N;N;N;s/CONFIG_PACKAGE_luci-app-mtk=y\nCONFIG_PACKAGE_luci-i18n-mtk-zh-cn=y\nCONFIG_PACKAGE_wifi-profile=y\nCONFIG_WIFI_NORMAL_SETTING=y/CONFIG_PACKAGE_lua-cjson=y\nCONFIG_PACKAGE_luci-app-mtwifi-cfg=y\nCONFIG_PACKAGE_luci-i18n-mtwifi-cfg-zh-cn=y\nCONFIG_PACKAGE_mtwifi-cfg=y/}' .config; then
-          echo "✅ 无线控制界面配置完成"
+        SET_IP=${{ github.event.inputs.LAN_IP }}
+        if [[ $SET_IP =~ ^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]; then
+            #修改lan关联IP
+            sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" $(find feeds/luci/modules/luci-mod-system -type f -name "flash.js")
+            #修改默认IP地址
+            sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" package/base-files/files/bin/config_generate
+            echo "设置 LAN 口 IP 地址为 $SET_IP 成功！"
         else
-          echo "⚠️ 无线控制界面配置可能失败，检查配置..."
-          diff .config.bak .config || true
+            echo "无效 IP 地址, 将使用默认地址。"
         fi
-
-    - name: 配置第三方 eeprom
-      if: env.USE_NX30PRO_EEPROM == 'true'
-      run: |
-        echo "📡 配置使用 nx30pro eeprom..."
-        cd openwrt
-        
-        # 创建固件目录
-        target_dir="target/linux/mediatek/mt7981/base-files/lib/firmware"
-        mkdir -p "$target_dir"
-        
-        # 复制 eeprom 文件
-        if [ -f "$GITHUB_WORKSPACE/eeprom/nx30pro_eeprom.bin" ]; then
-          cp "$GITHUB_WORKSPACE/eeprom/nx30pro_eeprom.bin" "$target_dir/MT7981_iPAiLNA_EEPROM.bin"
-          echo "✅ nx30pro eeprom 文件复制成功"
-        else
-          echo "❌ nx30pro eeprom 文件不存在: eeprom/nx30pro_eeprom.bin"
-          exit 1
-        fi
-        
-        # 修改相关配置文件
-        preinit_file="target/linux/mediatek/mt7981/base-files/lib/preinit/90_extract_caldata"
-        if [ -f "$preinit_file" ]; then
-          sed -i 's/caldata_extract_mmc/# caldata_extract_mmc/' "$preinit_file"
-          echo "✅ preinit 脚本修改完成"
-        fi
-        
-        makefile_path="package/mtk/drivers/mt_wifi/Makefile"
-        if [ -f "$makefile_path" ]; then
-          sed -i 's#./files/mt7981-default-eeprom/MT7981_iPAiLNA_EEPROM.bin##' "$makefile_path"
-          echo "✅ WiFi 驱动 Makefile 修改完成"
-        fi
-
-    - name: 配置闪存频率
-      if: env.USE_52MHZ == 'true'
-      run: |
-        echo "⚡ 配置使用 52MHz 闪存频率..."
-        cd openwrt
-        
-        dts_file="target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-cmcc-rax3000m-emmc.dts"
-        
-        if [ -f "$dts_file" ]; then
-          # 添加高速模式配置
-          sed -i -e '/bus-width = <8>;/ a\	cap-mmc-highspeed;' "$dts_file"
-          
-          # 修改频率设置
-          sed -i 's/26000000/52000000/g' "$dts_file"
-          
-          echo "✅ 闪存频率配置完成"
-          echo "当前 max-frequency 配置:"
-          grep max-frequency "$dts_file" || echo "未找到 max-frequency 配置"
-        else
-          echo "❌ DTS 文件不存在: $dts_file"
-          exit 1
-        fi
-
-    - name: 预设 Clash 核心和下载依赖
-      run: |
-        cd openwrt
-        
-        # 执行 Clash 核心预设脚本
-        #if [ -f "$GITHUB_WORKSPACE/$CLASH_CORE" ]; then
-        #  echo "🔧 预设 Clash 核心..."
-        #  chmod +x $GITHUB_WORKSPACE/$CLASH_CORE && $GITHUB_WORKSPACE/$CLASH_CORE
-        #fi
-        
-        # 生成默认配置
-        echo "⚙️ 生成默认配置..."
-        make defconfig
-        
-        # 下载编译依赖
-        echo "📥 下载编译依赖包..."
-        make download -j$(nproc) V=10
-        
-        # 清理无效的小文件
-        echo "🧹 清理无效下载文件..."
-        find dl -size -1024c -exec rm -f {} \;
-        
-        echo "✅ 依赖下载完成"
 
     - name: 编译固件
       id: compile
